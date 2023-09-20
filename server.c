@@ -21,6 +21,7 @@ using namespace std;
 #define MAX_PENDING 5
 #define MAX_LINE 256
 
+//define structure for users
 struct Users {
   char username[20];
   char password[20];
@@ -35,10 +36,13 @@ int main(int argc, char **argv) {
     int s;
     int new_s;
 
+    // *********************** Initialization Steps ******************************** //
     char status200[] = "200 OK\n";
     char status401[] = "401 You are not currently logged in, login first.\n";
+    char status402[] = "402 User not allowed to execute this command.\n";
     char status410[] = "410 Wrong UserID or Password\n";
     bool loginStatus = false;
+    bool root = false;
     
     /* Message of the day - hardcode */
     char *messages[20];
@@ -62,6 +66,8 @@ int main(int argc, char **argv) {
     strcpy(users[2].password, "david01");
     strcpy(users[3].username, "mary");
     strcpy(users[3].password, "mary01");
+
+    // *************************************************************************** //
 
     /* build address data structure */
     bzero((char *)&sin, sizeof(sin));
@@ -111,19 +117,15 @@ int main(int argc, char **argv) {
       //******************************   MSGSTORE *************************************** //
       if (strcmp(buf, "MSGSTORE\n") == 0) { 
 
-      //check if logged in, if not send back 401, else ...
-      if (!loginStatus) {
-        send (new_s, status401, strlen(status401), 0);
-      } else {
-        send (new_s, status200, strlen(status200), 0); //send status successful
-      }
-
-        
-        
+        //check if logged in, if not send back 401, else ...
+        if (!loginStatus) {
+          send (new_s, status401, strlen(status401), 0);
+        } else {
+          send (new_s, status200, strlen(status200), 0); //send status successful
+        }
       }
 
       //******************************   LOGIN *************************************** //
-
       if (strncmp(buf, "LOGIN", 5) == 0) { 
 
         //string manipulation to extract username and password from user input
@@ -137,6 +139,9 @@ int main(int argc, char **argv) {
           string tempPassword = users[i].password;
           
           if (username == tempUser && password == tempPassword) {
+            if(i == 0) {
+              root = true;
+            }
             loginStatus = true;
             send (new_s, status200, strlen(status200), 0); //send status successful   
             break; // Exit the loop since we found a match
@@ -149,13 +154,26 @@ int main(int argc, char **argv) {
       }
 
       //******************************   LOGOUT *************************************** //
-      if (strcmp(buf, "LOGOUT") == 0) { 
+      if (strcmp(buf, "LOGOUT\n") == 0) { 
+
         if (!loginStatus) {
           send (new_s, status401, strlen(status401), 0);
         } else {
           loginStatus = false;
           send (new_s, status200, strlen(status200), 0); //send status successful  
         }
+      }
+
+      //******************************   SHUTDOWN *************************************** //
+      if (strcmp(buf, "SHUTDOWN\n") == 0) {
+        if(!root) {
+          send (new_s, status402, strlen(status402), 0);
+        } else {
+          send (new_s, status200, strlen(status200), 0); //send status successful
+          //close(new_s);
+          break;
+        }
+
       }
 
 			cout << buf;
