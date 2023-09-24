@@ -41,8 +41,11 @@ int main(int argc, char **argv) {
     char status401[] = "401 You are not currently logged in, login first.\n";
     char status402[] = "402 User not allowed to execute this command.\n";
     char status410[] = "410 Wrong UserID or Password\n";
+    char status411[] = "411 MSGSTORE Full.\n";
     bool loginStatus = false;
     bool root = false;
+    char newMessageBuffer[MAX_LINE]; // Buffer used to store char input for MSGSTORE
+    int messageLen; // Store number of bytes from recv
     
     /* Message of the day - hardcode */
     char *messages[20];
@@ -55,6 +58,7 @@ int main(int argc, char **argv) {
     strcpy(messages[3], "Message 4\n");
     strcpy(messages[4], "Message 5\n");
     int msgGetCount = 0; 
+    int nextAvailableSlot = 5;
 
     /* Users - hardcode */
     struct Users users[4];
@@ -102,11 +106,12 @@ int main(int argc, char **argv) {
 		while (len = recv(new_s, buf, sizeof(buf), 0)) {
 
       buf[len] = '\0';
+      cout << "initial buffer: " << buf << endl;
       
       //******************************   MSGGET *************************************** //
       if (strcmp(buf, "MSGGET\n") == 0) { //MSGGET
 
-        if (msgGetCount >= 5) {
+        if (msgGetCount >= nextAvailableSlot) {
           msgGetCount = 0; // Reset back to the first message
         }
         send (new_s, status200, strlen(status200), 0); //send status successful
@@ -120,8 +125,17 @@ int main(int argc, char **argv) {
         //check if logged in, if not send back 401, else ...
         if (!loginStatus) {
           send (new_s, status401, strlen(status401), 0);
+        } else if (nextAvailableSlot == 20) {
+          send (new_s, status411, strlen(status411), 0); // if MSGSTORE storage is full, send error
         } else {
           send (new_s, status200, strlen(status200), 0); //send status successful
+          
+          memset(newMessageBuffer, 0, sizeof(newMessageBuffer)); // reset the array
+          
+          messageLen = recv(new_s, newMessageBuffer, sizeof(newMessageBuffer), 0); // receive data from client
+          newMessageBuffer[messageLen] = '\0';
+          strcpy(messages[nextAvailableSlot], newMessageBuffer); // store client message into next available slot
+          nextAvailableSlot++; // move to next available slot
         }
       }
 
@@ -170,7 +184,8 @@ int main(int argc, char **argv) {
           send (new_s, status402, strlen(status402), 0);
         } else {
           send (new_s, status200, strlen(status200), 0); //send status successful
-          //close(new_s);
+          close(new_s);
+          exit(1);
           break;
         }
 
