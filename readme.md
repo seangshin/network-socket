@@ -6,8 +6,8 @@ The motivation of this project is to desgin a socket interface for a client-serv
 ## Table of Contents
 - [Function](#Function)
 - [Instructions](#Instructions)
-- [Known bugs](#Known bugs)
-- [Sample outputs](#Sample outputs)
+- [Known bugs](#Knownbugs)
+- [Sample outputs](#Sampleoutputs)
 Software tools required
 Putty - SSH Client
 VS Code - Code editor
