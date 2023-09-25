@@ -181,6 +181,7 @@ int main(int argc, char **argv) {
           send (new_s, status401, strlen(status401), 0);
         } else {
           loginStatus = false;
+          root = false;
           send (new_s, status200, strlen(status200), 0); //send status successful  
         }
       }
