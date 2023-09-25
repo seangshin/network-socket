@@ -38,6 +38,7 @@ int main(int argc, char **argv) {
 
     // *********************** Initialization Steps ******************************** //
     char status200[] = "200 OK\n";
+    char status300[] = "300 message format error\n";
     char status401[] = "401 You are not currently logged in, login first.\n";
     char status402[] = "402 User not allowed to execute this command.\n";
     char status410[] = "410 Wrong UserID or Password\n";
@@ -84,6 +85,8 @@ int main(int argc, char **argv) {
 		perror("socket");
 		exit(1);
     }
+    int option = 1;
+    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)); // allows to reuse of address to avoid bind error
 
     if ((bind(s, (struct sockaddr *) &sin, sizeof(sin))) < 0) {
 		perror("bind");
@@ -106,7 +109,6 @@ int main(int argc, char **argv) {
 		while (len = recv(new_s, buf, sizeof(buf), 0)) {
 
       buf[len] = '\0';
-      cout << "initial buffer: " << buf << endl;
       
       //******************************   MSGGET *************************************** //
       if (strcmp(buf, "MSGGET\n") == 0) { //MSGGET
@@ -120,7 +122,7 @@ int main(int argc, char **argv) {
       }
 
       //******************************   MSGSTORE *************************************** //
-      if (strcmp(buf, "MSGSTORE\n") == 0) { 
+      else if (strcmp(buf, "MSGSTORE\n") == 0) { 
 
         //check if logged in, if not send back 401, else ...
         if (!loginStatus) {
@@ -136,11 +138,12 @@ int main(int argc, char **argv) {
           newMessageBuffer[messageLen] = '\0';
           strcpy(messages[nextAvailableSlot], newMessageBuffer); // store client message into next available slot
           nextAvailableSlot++; // move to next available slot
+          send (new_s, status200, strlen(status200), 0); //send status successful
         }
       }
 
       //******************************   LOGIN *************************************** //
-      if (strncmp(buf, "LOGIN", 5) == 0) { 
+      else if (strncmp(buf, "LOGIN", 5) == 0) { 
 
         //string manipulation to extract username and password from user input
         string input(buf);
@@ -148,28 +151,32 @@ int main(int argc, char **argv) {
         string password = input.substr(input.find(" ", input.find(" ") + 1) + 1);
         password.erase(password.find_last_not_of("\n") + 1); // remove newline character (\n)
 
+        //create string datatypes and hold char for later calculation
         for (int i = 0; i < 4; i++) {
           string tempUser = users[i].username;
           string tempPassword = users[i].password;
           
+          //check if username and password matches idatabase
           if (username == tempUser && password == tempPassword) {
+            //check if root user/pass
             if(i == 0) {
               root = true;
             }
-            loginStatus = true;
+            loginStatus = true; // set login status to true for remaining session
             send (new_s, status200, strlen(status200), 0); //send status successful   
             break; // Exit the loop since we found a match
           }
         }
 
         if (!loginStatus) {
-          send (new_s, status410, strlen(status410), 0); //send status successful
+          send (new_s, status410, strlen(status410), 0); //send error
         }   
       }
 
       //******************************   LOGOUT *************************************** //
-      if (strcmp(buf, "LOGOUT\n") == 0) { 
+      else if (strcmp(buf, "LOGOUT\n") == 0) { 
 
+        //check loginStatus to ensure user is logged in, if true then logout user and if not send error
         if (!loginStatus) {
           send (new_s, status401, strlen(status401), 0);
         } else {
@@ -178,21 +185,39 @@ int main(int argc, char **argv) {
         }
       }
 
-      //******************************   SHUTDOWN *************************************** //
-      if (strcmp(buf, "SHUTDOWN\n") == 0) {
-        if(!root) {
-          send (new_s, status402, strlen(status402), 0);
-        } else {
-          send (new_s, status200, strlen(status200), 0); //send status successful
-          close(new_s);
-          exit(1);
-          break;
-        }
+      //******************************   QUIT *************************************** //
+      else if (strcmp(buf, "QUIT\n") == 0) {
+
+        //reset root and loginStatus to false, then send successful message
+        root = false;
+        loginStatus = false;
+        send (new_s, status200, strlen(status200), 0); //send status successful
 
       }
 
+      //******************************   SHUTDOWN *************************************** //
+      else if (strcmp(buf, "SHUTDOWN\n") == 0) {
+        //check if root user is logged in, if so then send successful status and close/terminate server
+        if(!root) {
+          send (new_s, status402, strlen(status402), 0);
+        } else if (root){
+          send (new_s, status200, strlen(status200), 0); //send status successful
+          close(new_s);
+          exit(1);
+        } else {
+          send (new_s, status300, strlen(status300), 0); //send status successful
+        }
+        //reset root and loginStatus to false
+        root = false;
+        loginStatus = false;
+      }
+
+      else {
+        send (new_s, buf, strlen(buf) + 1, 0); // unexpected responses will echo client
+      }
+
 			cout << buf;
-			send (new_s, buf, strlen(buf) + 1, 0);
+			
 		}
 
 		close(new_s);
