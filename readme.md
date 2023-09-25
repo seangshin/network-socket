@@ -10,10 +10,9 @@ The motivation of this project is to desgin a socket interface for a client-serv
 - [Known bugs](#Known-bugs)
 - [Sample outputs](#Sample-outputs)
 
-
 ## Function
 
-Server.c
+server.c
 1. Initialization steps
 Hardcode users. Define status messages. Define login status and root user flags. Define message buffer to hold message input from client. Hardcode 5 "message of the day" and counter. 
 2. MSGGET
@@ -28,6 +27,15 @@ When the client sends the "LOGOUT" command, the server will check if the user is
 When the client sends the "QUIT" command, the server will reset all flags and send a status 200.
 7. SHUTDOWN
 When the client sends the "SHUTDOWN" command, the server will check if the root user is logged in. If so, then it will send a status 200 and close the server socket and exit the program. If not the root user, it will send an error status. All flags are reset.
+
+client.c
+1. QUIT
+When the client sends the "QUIT" command, the client will wait until the server responds to acknowledge the request. The client will then close the socket by exiting the while loop.
+2. SHUTDOWN
+When the client sends the "SHUTDOWN" command, the client will wait until the server responds to acknowledge the request. The client will then close the socket by exiting the while loop.
+3. Reset buffer
+After each loop, the client will reset the buffer and the return buffer to avoid any residual data from interfering with command processing.
+
 
 ## Tools
 Software tools required
