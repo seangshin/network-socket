@@ -5,14 +5,11 @@ The motivation of this project is to desgin a socket interface for a client-serv
 
 ## Table of Contents
 - [Function](#Function)
+- [Tools](#Tools)
 - [Instructions](#Instructions)
 - [Known bugs](#Known-bugs)
 - [Sample outputs](#Sample-outputs)
-Software tools required
-Putty - SSH Client
-VS Code - Code editor
-WinSCP - File Transfer
-Global Protect - VPN
+
 
 ## Function
 
@@ -31,6 +28,13 @@ When the client sends the "LOGOUT" command, the server will check if the user is
 When the client sends the "QUIT" command, the server will reset all flags and send a status 200.
 7. SHUTDOWN
 When the client sends the "SHUTDOWN" command, the server will check if the root user is logged in. If so, then it will send a status 200 and close the server socket and exit the program. If not the root user, it will send an error status. All flags are reset.
+
+## Tools
+Software tools required
+Putty - SSH Client
+VS Code - Code editor
+WinSCP - File Transfer
+Global Protect - VPN
 
 ## Instructions
 1. Open Putty app (or any other SSH client) and connect to login to the following server: login.umd.umich.edu
