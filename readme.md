@@ -10,6 +10,7 @@ The motivation of this project is to desgin a socket interface for a client-serv
 - [Known bugs](#Known-bugs)
 - [Sample outputs](#Sample-outputs)
 
+
 ## Function
 
 Server.c
