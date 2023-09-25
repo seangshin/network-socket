@@ -53,13 +53,23 @@ int main(int argc, char * argv[]) {
 
     /* main loop; get and send lines of text */
     while (fgets(buf, sizeof(buf), stdin)) {
-		buf[MAX_LINE -1] = '\0';
-		len = strlen(buf) + 1;
-		send (s, buf, len, 0); //send response to server
-		recv (s, rbuf, sizeof(rbuf), 0); //receive response from server
-		cout << rbuf;
-    }
+		  buf[MAX_LINE -1] = '\0';
+		  len = strlen(buf) + 1;
+		  send (s, buf, len, 0); //send response to server
+		  recv (s, rbuf, sizeof(rbuf), 0); //receive response from server
+      cout << rbuf;
 
+      // check if QUIT command is sent and close client socket
+      if (strcmp(buf, "QUIT\n") == 0) {
+        break;
+      }
+      // check if SHUTDOWN command is sent and close client socket
+      if (strcmp(buf, "SHUTDOWN\n") == 0) {
+        break;
+      }
+      memset(buf, 0, sizeof(buf)); // reset buffer
+      memset(rbuf, 0, sizeof(rbuf)); // reset return buffer
+    }
     close(s);
 } 
  
